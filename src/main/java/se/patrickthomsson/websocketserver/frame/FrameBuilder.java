@@ -1,12 +1,16 @@
 package se.patrickthomsson.websocketserver.frame;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import se.patrickthomsson.util.BitPatternUtil;
 
+@Service
 public class FrameBuilder {
 	
-	private MaskingKeyGenerator maskingKeyGenerator = new MaskingKeyGenerator();
+	@Autowired
+	private MaskingKeyGenerator maskingKeyGenerator;
 	
 	//TODO implement creation of unmasked frames
 	public Frame buildUnmaskedFrame(String message) {

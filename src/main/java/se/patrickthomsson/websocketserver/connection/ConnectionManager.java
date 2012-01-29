@@ -7,14 +7,19 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
 public class ConnectionManager {
+
+	@Autowired
+	private IdentityGenerator identityGenerator;
 	
 	private Map<SocketAddress, Connection> connections;
-	private IdentityGenerator identityGenerator;
 	
 	public ConnectionManager() {
 		connections = new HashMap<SocketAddress, Connection>();
-		identityGenerator = new IdentityGenerator();
 	}
 	
 	public Connection getConnection(Socket socket) {

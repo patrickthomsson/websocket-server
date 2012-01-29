@@ -2,8 +2,11 @@ package se.patrickthomsson.websocketserver.frame;
 
 import java.util.Random;
 
+import org.springframework.stereotype.Service;
+
 import se.patrickthomsson.util.BitPatternUtil;
 
+@Service
 public class MaskingKeyGenerator {
 	
 	public byte[] generate() {

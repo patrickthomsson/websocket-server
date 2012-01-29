@@ -5,7 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
 
+@Service
 public class WebSocketIO {
 	
 	private static final Logger LOG = Logger.getLogger(WebSocketIO.class);

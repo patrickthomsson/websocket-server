@@ -13,6 +13,8 @@ import java.util.Collection;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.patrickthomsson.websocketserver.connection.Connection;
 import se.patrickthomsson.websocketserver.connection.ConnectionManager;
@@ -23,22 +25,20 @@ import se.patrickthomsson.websocketserver.protocol.Response;
 import se.patrickthomsson.websocketserver.protocol.simplechat.SimpleChatProtocol;
 
 public class WebSocketServer {
-
-	private static final Logger LOG = Logger.getLogger(WebSocketServer.class);
-
+	
 	public static int port = 8082;
-
-	private Communicator communicator;
-	private ConnectionManager connectionManager;
-	private Handshaker handshaker;
+	
+	private static final Logger LOG = Logger.getLogger(WebSocketServer.class);
+	
+	private static ApplicationContext context = new ClassPathXmlApplicationContext( "application-context.xml");
+	private ConnectionManager connectionManager = context.getBean(ConnectionManager.class);
+	private Communicator communicator = context.getBean(Communicator.class);
+	private Handshaker handshaker = context.getBean(Handshaker.class);
 
 	private CommunicationProtocol protocol;
 
 	private WebSocketServer(CommunicationProtocol protocol) {
 		this.protocol = protocol;
-		connectionManager = new ConnectionManager();
-		communicator = new Communicator();
-		handshaker = new Handshaker();
 	}
 
 	public static void main(String[] args) throws IOException {

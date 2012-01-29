@@ -6,7 +6,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
 
+@Service
 public class RequestParser {
 
 	private static final Logger LOG = Logger.getLogger(RequestParser.class);

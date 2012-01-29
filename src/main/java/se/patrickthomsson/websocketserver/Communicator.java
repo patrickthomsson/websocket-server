@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import se.patrickthomsson.websocketserver.connection.Connection;
 import se.patrickthomsson.websocketserver.frame.Frame;
 import se.patrickthomsson.websocketserver.frame.FrameBuilder;
@@ -12,15 +15,14 @@ import se.patrickthomsson.websocketserver.message.FrameRequest;
 import se.patrickthomsson.websocketserver.protocol.Request;
 import se.patrickthomsson.websocketserver.protocol.Response;
 
+@Service
 public class Communicator {
 
+	@Autowired
 	private WebSocketIO webSocketIO;
+	
+	@Autowired
 	private FrameBuilder frameBuilder;
-
-	public Communicator() {
-		webSocketIO = new WebSocketIO();
-		frameBuilder = new FrameBuilder();
-	}
 
 	public Request readRequest(Connection connection) {
 		SocketChannel socketChannel = connection.getSocket().getChannel();

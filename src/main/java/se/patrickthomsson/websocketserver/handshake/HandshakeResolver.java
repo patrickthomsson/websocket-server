@@ -1,12 +1,17 @@
 package se.patrickthomsson.websocketserver.handshake;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import se.patrickthomsson.websocketserver.WebSocketServer;
 
+@Service
 public class HandshakeResolver {
 	
 	private static final String LF = "\r\n";
 	
-	private ChallengeCalculator challengeCalculator = new ChallengeCalculator();
+	@Autowired
+	private ChallengeCalculator challengeCalculator;
 
 	public HandshakeResponse buildResponse(HandshakeRequest handshakeRequest) {
 		int version = getVersion(handshakeRequest);

@@ -4,6 +4,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.stereotype.Service;
+
+@Service
 public class IdentityGenerator {
 
 	private static final Set<UUID> generatedIds = new HashSet<UUID>();

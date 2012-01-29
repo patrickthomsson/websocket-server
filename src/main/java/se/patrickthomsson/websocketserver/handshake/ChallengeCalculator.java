@@ -2,10 +2,11 @@ package se.patrickthomsson.websocketserver.handshake;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
 
 import se.patrickthomsson.util.Encrypter;
 
-
+@Service
 public class ChallengeCalculator {
 	
 	private static final Logger LOG = Logger.getLogger(ChallengeCalculator.class);

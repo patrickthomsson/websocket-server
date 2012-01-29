@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 
 import se.patrickthomsson.util.BitPatternUtil;
 
-
+/**
+ * Not a spring bean, it holds state.
+ */
 public class FrameInterpreter {
 	
 	private static final Logger LOG = Logger.getLogger(FrameInterpreter.class);
@@ -18,7 +20,6 @@ public class FrameInterpreter {
 	private int byteIndex = 2;
 	
 	public Frame interpret(byte[] frameBytes) {
-		byteIndex = 2;
 		
 		boolean frameFin = firstBitSet(frameBytes[0]);
 		boolean frameRsv1 = secondBitSet(frameBytes[0]);
