@@ -20,15 +20,16 @@ public class Communicator {
 
 	@Autowired
 	private WebSocketIO webSocketIO;
-	
 	@Autowired
 	private FrameBuilder frameBuilder;
+	@Autowired
+	private FrameInterpreter frameInterpreter;
 
 	public Request readRequest(Connection connection) {
 		SocketChannel socketChannel = connection.getSocket().getChannel();
 		byte[] requestBytes = webSocketIO.read(socketChannel);
 
-		Frame frame = new FrameInterpreter().interpret(requestBytes);
+		Frame frame = frameInterpreter.interpret(requestBytes);
 		FrameRequest frameRequest = new FrameRequest(frame, connection.getId());
 
 		return frameRequest;

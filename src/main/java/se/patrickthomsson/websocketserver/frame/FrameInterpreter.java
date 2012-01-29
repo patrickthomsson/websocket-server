@@ -1,12 +1,11 @@
 package se.patrickthomsson.websocketserver.frame;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Service;
 
 import se.patrickthomsson.util.BitPatternUtil;
 
-/**
- * Not a spring bean, it holds state.
- */
+@Service
 public class FrameInterpreter {
 	
 	private static final Logger LOG = Logger.getLogger(FrameInterpreter.class);
@@ -16,10 +15,8 @@ public class FrameInterpreter {
 	private static final byte FLAG_BIT_3 = 4;    // 2^^2    00000100
 	private static final byte FLAG_BIT_4 = 8;    // 2^^3    00001000
 	
-	//stateful object!
-	private int byteIndex = 2;
-	
 	public Frame interpret(byte[] frameBytes) {
+		ByteIndex byteIndex = new ByteIndex(2);
 		
 		boolean frameFin = firstBitSet(frameBytes[0]);
 		boolean frameRsv1 = secondBitSet(frameBytes[0]);
@@ -29,9 +26,9 @@ public class FrameInterpreter {
 		byte opCode = getOpCode(frameBytes[0]);
 		boolean masked = firstBitSet(frameBytes[1]);
 		
-		int payloadLen = getPayloadLength(frameBytes);
-		byte[] maskingKey = getMaskingKey(frameBytes);
-		byte[] payloadData = getPayloadData(frameBytes, payloadLen);
+		int payloadLen = getPayloadLength(frameBytes, byteIndex);
+		byte[] maskingKey = getMaskingKey(frameBytes, byteIndex);
+		byte[] payloadData = getPayloadData(frameBytes, payloadLen, byteIndex);
 		String unmaskedPayloadData = unmaskPayloadData(payloadData, maskingKey);
 
 		Frame frame = new Frame();
@@ -60,18 +57,18 @@ public class FrameInterpreter {
 		return new String(unmaskedBytes);
 	}
 
-	private byte[] getPayloadData(byte[] frame, int payloadLen) {
+	private byte[] getPayloadData(byte[] frame, int payloadLen, ByteIndex byteIndex) {
 		byte[] payload = new byte[payloadLen];
 		for(int i=0; i<payloadLen; i++) {
-			payload[i] = frame[byteIndex++];
+			payload[i] = frame[byteIndex.increment()];
 		}
 		return payload;
 	}
 
-	private byte[] getMaskingKey(byte[] frame) {
+	private byte[] getMaskingKey(byte[] frame, ByteIndex byteIndex) {
 		byte[] maskingKey = new byte[4]; 
 		for(int i=0; i<4; i++) {
-			maskingKey[i] = frame[byteIndex++];
+			maskingKey[i] = frame[byteIndex.increment()];
 		}
 		return maskingKey;
 	}
@@ -94,7 +91,7 @@ public class FrameInterpreter {
      * application data.
 	 * 
 	 */
-	private int getPayloadLength(byte[] frame) {
+	private int getPayloadLength(byte[] frame, ByteIndex byteIndex) {
 		byte mask = Byte.parseByte("01111111", 2);
 		byte payloadLength = (byte) (frame[1] & mask);
 		
@@ -102,24 +99,24 @@ public class FrameInterpreter {
 			return payloadLength;
 		}
 		else if(payloadLength == 126) {
-			return getPayloadLengthFromTwoBytes(frame);
+			return getPayloadLengthFromTwoBytes(frame, byteIndex);
 		} else if(payloadLength == 127) {
-			return getPayloadLengthFromEightBytes(frame);
+			return getPayloadLengthFromEightBytes(frame, byteIndex);
 		}
 		
 		throw new RuntimeException("Payload length has bad value: " + payloadLength);
 	}
 
-	private int getPayloadLengthFromEightBytes(byte[] frame) {
+	private int getPayloadLengthFromEightBytes(byte[] frame, ByteIndex byteIndex) {
 		String bitPattern = BitPatternUtil.createBitPattern(
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++], 
-				frame[byteIndex++]);
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()]);
 		long payloadLengthLong = Long.parseLong(bitPattern, 2);
 		
 		if(payloadLengthLong > Integer.MAX_VALUE) {
@@ -129,10 +126,10 @@ public class FrameInterpreter {
 		return (int) payloadLengthLong;
 	}
 
-	private int getPayloadLengthFromTwoBytes(byte[] frame) {
+	private int getPayloadLengthFromTwoBytes(byte[] frame, ByteIndex byteIndex) {
 		String bitPattern = BitPatternUtil.createBitPattern(
-				frame[byteIndex++], 
-				frame[byteIndex++]);
+				frame[byteIndex.increment()], 
+				frame[byteIndex.increment()]);
 		return Integer.parseInt(bitPattern, 2);
 	}
 
@@ -150,6 +147,18 @@ public class FrameInterpreter {
 
 	private static boolean fourthBitSet(byte b) {
 		return FLAG_BIT_4 == (b & FLAG_BIT_4);
+	}
+	
+	private static class ByteIndex {
+		private int byteIndex;
+		
+		public ByteIndex(int startValue) {
+			this.byteIndex = startValue;
+		}
+		
+		public int increment() {
+			return byteIndex++;
+		}
 	}
 
 }
