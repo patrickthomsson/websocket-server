@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HTML5 : WebSockets</title>
+
+<style type="text/css">
+
+#messages {
+	float: left;
+}
+#userlist {
+	clear: left;
+}
+#connectionForm {
+	padding-bottom: 50px;
+}
+#send {
+
+}
+#communication {
+	overflow: auto;
+	width: 1000px;
+}
+</style>
+
+<script type="text/javascript" src="jquery-1.5.2.min.js"></script>
+<script type="text/javascript">
+
+(function($) {
+
+	var url = "ws://localhost:8082/chat";
+	var websocket;
+
+	//deals with form submission issues, we don't want the page to reload on submit
+	if(location.href.indexOf("?#") == -1) {
+		location.assign(location.href + "?#");
+	}
+	
+	$(function() {
+		testSupport();
+		$("#connectButton").click(connect);
+		$("#closeButton").click(disconnet);
+		$("#chatForm").submit(function(event) {
+			var name = getUserName();
+			var message = $("#inputMessage").val();
+			send(name, message);
+			$("#inputMessage").attr("value", "");
+		});
+		$("#user").focus();
+	});
+	
+	var testSupport = function () {
+		if (window.WebSocket) {
+			$("#support").text("HTML5 WebSocket is supported in your browser.");
+		} else {
+			$("#support").text("HTML5 WebSocket is not supported in your browser, try Google Chrome.");
+		}
+	}
+	
+	var connect = function() {
+		if(!getUserName()) {
+			return;
+		}
+		log("CONNECTING");
+		$("#status").text("Connecting...");
+	
+		initWebSocket(url);
+		log("websocket.readyState=" + websocket.readyState);
+		$("#user").attr("disabled", "disabled");
+		return false;
+	}
+	
+	var initWebSocket = function(url) {
+		websocket = new WebSocket(url);
+		websocket.onopen = function() {
+			log("CONNECTION OPEN");
+			$("#status").css("color", "green");
+			$("#status").text("Connected to " + url);
+			log("websocket.readyState=" + websocket.readyState);
+			sendMeta("NEW_USER:" + getUserName());
+			$("#inputMessage").focus();
+		}
+		websocket.onmessage = function(e) {
+			log("GOT MESSAGE: " + e.data);
+			if(e.data.indexOf("META:") != -1) {
+				receiveMetaData(e.data);
+			} else {
+				receiveMessage(e.data);
+			}
+			log("websocket.readyState=" + websocket.readyState);
+		}
+		websocket.onclose = function(e) {
+			log("CONNECTION CLOSED");
+			$("#status").css("color", "red");
+			$("#status").text("Not connected");
+			log("websocket.readyState=" + websocket.readyState);
+		}
+		websocket.onerror = function(e) {
+			log("ERROR:" + e);
+			log("websocket.readyState=" + websocket.readyState);
+		}
+	}
+	
+	var send = function(name, message) {
+		if(name && message) {
+			var fullMessage = name + ": " + message;
+			log("SENDING MESSAGE: " + fullMessage);
+			websocket.send("MESSAGE:" + fullMessage);
+		} else {
+			log("NO NAME OR MESSAGE FOUND, WILL NOT SEND MESSAGE");
+		}
+	}
+	
+	var sendMeta = function(message) {
+		log("SENDING META MESSAGE: " + message);
+		websocket.send("META:" + message);
+	}
+	
+	var receiveMetaData = function(meta) {
+		if(meta.indexOf("USERLIST:") != -1) {
+			updateUserlist(meta.split("USERLIST:")[1].split(","));
+		}
+	}
+	
+	var updateUserlist = function(userlist) {
+		$("#userlist").text("");
+		for(var i=0; i<userlist.length; i++) {
+			$("#userlist").append(userlist[i] + "\n");
+		}
+	}
+
+	var disconnet = function() {
+		log("CLOSING CONNECTION");
+		websocket.close();
+		log("websocket.readyState=" + websocket.readyState);
+		return false;
+	}
+
+	var log = function(message) {
+		var d = new Date();
+		var timestamp = d.toLocaleTimeString() + ":" + d.getMilliseconds();
+		console.log(timestamp + ": " + message);
+	}
+	
+	var receiveMessage = function(message) {
+		$("#messages").append(message.split("MESSAGE:")[1] + "\n");
+	}
+	
+	var getUserName = function() {
+		return $("#user").val();
+	}
+	
+})(jQuery);
+
+</script>
+</head>
+
+<body>
+	<p id="support"></p>	
+	<p id="status">Click connect</p> 
+	
+	<form id="connectionForm" method="get" action="#">
+		<input id="user" value="" placeholder="Enter your name" required/>
+		<button id="connectButton">Connect</button>
+		<button id="closeButton">Close</button>
+	</form>	
+	<form id="chatForm" method="get" action="#">
+		<div id="communication">
+			<textarea id="messages" cols="80" rows="20" placeholder="Chat messages" readonly></textarea>
+			<textarea id="userlist" cols="20" rows="12" placeholder="Users" readonly></textarea>
+		</div>	
+		<div id="send">
+			<input id="inputMessage" value="" required/>
+			<input type="submit" id="sendButton" value="Send">
+		</div>
+	</form>
+</body>
+</html>
