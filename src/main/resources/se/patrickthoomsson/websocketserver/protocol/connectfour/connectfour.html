@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>HTML5 : WebSockets : Connect Four</title>
+	<link type="text/css" rel="stylesheet" href="connectfour.css"/>
+	<script type="text/javascript" src="jquery-1.5.2.min.js"></script>
+	<script type="text/javascript" src="connectfour.js"></script> 
+</head>
+
+<body>
+	<p id="support"></p>	
+	<p id="status">Click connect</p> 
+	
+	<form id="connectionForm" method="get" action="#">
+		<input id="user" value="" placeholder="Enter your name" required/>
+		<button id="connectButton">Connect</button>
+		<button id="closeButton">Close</button>
+	</form>	
+	<form id="chatForm" method="get" action="#">
+		<div id="communication">
+			<textarea id="messages" cols="80" rows="20" placeholder="Chat messages" readonly></textarea>
+			<section id="users">
+				<textarea id="userlist" cols="20" rows="12" placeholder="Users" readonly></textarea>
+				
+				<section id="invitation">
+					<select id="inviteList">
+						<option>No users to invite</option>
+					</select>
+					<button id="invite">Invite</button>
+				</section>
+			</section>
+		</div>	
+		<div id="send">
+			<input id="inputMessage" value="" required/>
+			<input type="submit" id="sendButton" value="Send">
+		</div>
+	</form>
+</body>
+</html>

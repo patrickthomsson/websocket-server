@@ -1,0 +1,31 @@
+#messages {
+	float: left;
+}
+#users {
+	float: left;
+	width: 200px;
+}
+#userlist {
+	display: block;
+	width: 100%;
+}
+#invitation {
+	
+}
+#inviteList {
+	margin: 10px 0 0 0;
+	width: 100%;
+}
+#invite {
+	float: right;
+}
+#connectionForm {
+	padding-bottom: 50px;
+}
+#send {
+
+}
+#communication {
+	overflow: auto;
+	width: 1000px;
+}
