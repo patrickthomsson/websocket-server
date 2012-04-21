@@ -15,7 +15,7 @@ public class WebSocketIO {
 
 	public void write(byte[] response, SocketChannel sc) throws IOException {
 		sc.write(ByteBuffer.wrap(response));
-		LOG.info("RESPONDING: \n" + new String(response).replaceAll("\\r\\n", "<CR><LF>\n"));
+		LOG.trace("RESPONDING: \n" + new String(response).replaceAll("\\r\\n", "<CR><LF>\n"));
 	}
 	
 	public byte[] read(SocketChannel socketChannel) {
@@ -25,7 +25,7 @@ public class WebSocketIO {
 			
 			if(read != -1) {
 				String input = bufferAsString().substring(0, read);
-				LOG.info("INPUT IS:\n" + input.replaceAll("\\r\\n", "<CR><LF>\n"));
+				LOG.trace("INPUT IS:\n" + input.replaceAll("\\r\\n", "<CR><LF>\n"));
 				return readBytesFromBuffer(read);
 			}
 			else {
@@ -35,7 +35,7 @@ public class WebSocketIO {
 		catch(Exception e) {
 			LOG.error("Read failed: ", e);
 		}
-		return null;
+		return new byte[0];
 	}
 
 	private byte[] readBytesFromBuffer(int numberOfBytesToRead) {

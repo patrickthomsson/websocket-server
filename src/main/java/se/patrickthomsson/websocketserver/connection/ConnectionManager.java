@@ -48,7 +48,7 @@ public class ConnectionManager {
 	}
 
 	private Connection createConnection(Socket s) {
-		String id = identityGenerator.generateId();
+		ConnectionId id = identityGenerator.generateId();
 		return new Connection(s, id);
 	}
 
@@ -56,10 +56,10 @@ public class ConnectionManager {
 		connections.remove(connections.get(socket.getRemoteSocketAddress()));
 	}
 
-	public Collection<Connection> getConnections(Collection<String> connectionIds) {
+	public Collection<Connection> getConnections(Collection<ConnectionId> connectionIds) {
 		Collection<Connection> connections = new ArrayList<Connection>(); 
 		for(Connection c : getConnections()) {
-			String id = c.getId();
+			ConnectionId id = c.getId();
 			if(connectionIds.contains(id)) {
 				connections.add(c);
 			}

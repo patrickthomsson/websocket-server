@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import se.patrickthomsson.util.BitPatternUtil;
+import se.patrickthomsson.websocketserver.exception.WebSocketServerException;
 
 @Service
 public class FrameBuilder {
@@ -75,7 +76,7 @@ public class FrameBuilder {
 				payloadLengthByte |= (byte) 128;
 			}
 		} else {
-			throw new RuntimeException("payload length unsupported... was " + payloadLength);
+			throw new WebSocketServerException("payload length unsupported... was " + payloadLength);
 		}
 		return new byte[] { payloadLengthByte };
 	}

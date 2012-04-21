@@ -1,11 +1,11 @@
 package se.patrickthomsson.websocketserver.handshake;
 
-import static org.junit.Assert.assertEquals;
-
 import java.security.NoSuchAlgorithmException;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class ChallengeCalculatorTest {
 	

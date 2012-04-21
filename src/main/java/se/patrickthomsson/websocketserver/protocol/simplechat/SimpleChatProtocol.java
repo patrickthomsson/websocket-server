@@ -1,13 +1,18 @@
 package se.patrickthomsson.websocketserver.protocol.simplechat;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import se.patrickthomsson.util.CollectionUtil;
+import se.patrickthomsson.websocketserver.WebSocketServer;
+import se.patrickthomsson.websocketserver.connection.ConnectionId;
 import se.patrickthomsson.websocketserver.protocol.CommunicationProtocol;
 import se.patrickthomsson.websocketserver.protocol.Request;
 import se.patrickthomsson.websocketserver.protocol.Response;
+import se.patrickthomsson.websocketserver.protocol.ResponseImpl;
 
 public class SimpleChatProtocol implements CommunicationProtocol {
 
@@ -15,31 +20,51 @@ public class SimpleChatProtocol implements CommunicationProtocol {
 	
 	private static final String NEW_USER_MESSAGE_PREFIX = "META:NEW_USER:";
 	private static final String USERLIST_MESSAGE_PREFIX = "META:USERLIST:";
-	private static final String DELIMITER = ",";
 	
-	private Map<String, String> connections = new HashMap<String, String>();
+	private Map<ConnectionId, String> connections = new HashMap<ConnectionId, String>();
+	private WebSocketServer webSocketServer;
+	
+	public SimpleChatProtocol() {
+		webSocketServer = new WebSocketServer(this);
+	}
 
 	@Override
-	public void addConnection(String id) {
+	public void addConnection(ConnectionId id) {
 		if (connections.containsKey(id)) {
 			throw new RuntimeException("Connection already exists!");
 		}
 		connections.put(id, "Anonymous");
 	}
+	
+	@Override
+	public void removeConnection(ConnectionId id) {
+		connections.remove(id);
+		webSocketServer.processResponse(broadcast(createUserListMessage()));
+	}
 
 	@Override
-	public Response respond(Request request) {
-		String message = request.getMessage();
-		if (isNewUserName(message)) {
+	public void processRequest(Request request) {
+		LOG.debug(String.format("Request; Message=%s, Sender=%s", request.getMessage(), request.getConnectionId()));
+		Response response = createResponse(request);
+		LOG.debug(String.format("Response; Message=%s, Receivers: %s", response.getMessage(), response.getReceiverIds()));
+		webSocketServer.processResponse(response);
+	}
+
+	private Response createResponse(Request request) {
+		if (isNewUserName(request.getMessage())) {
 			saveUserName(request);
 			return createUserListResponse();
+		} else {
+			return broadcast(request.getMessage());
 		}
+	}
 
+	private Response broadcast(String message) {
 		return new ResponseImpl(message, connections.keySet());
 	}
 
 	private boolean isNewUserName(String message) {
-		return message.contains(NEW_USER_MESSAGE_PREFIX);
+		return message.startsWith(NEW_USER_MESSAGE_PREFIX);
 	}
 
 	private void saveUserName(Request request) {
@@ -50,17 +75,20 @@ public class SimpleChatProtocol implements CommunicationProtocol {
 	private Response createUserListResponse() {
 		String userlistMessage = createUserListMessage();
 		LOG.debug(userlistMessage);
-		return new ResponseImpl(userlistMessage, connections.keySet());
+		return broadcast(userlistMessage);
 	}
 
 	private String createUserListMessage() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(USERLIST_MESSAGE_PREFIX);
-		for(String userName : connections.values()) {
-			sb.append(userName).append(DELIMITER);
-		}
-		sb.delete(sb.length()-DELIMITER.length(), sb.length());
+		sb.append(CollectionUtil.asDelimitedString(connections.values()));
 		return sb.toString();
+	}
+
+	public static void main(String[] args) throws IOException {
+		LOG.info("Starting the SimpleChat protocol");
+		SimpleChatProtocol simpleChatProtocol = new SimpleChatProtocol();
+		simpleChatProtocol.webSocketServer.start();
 	}
 
 }

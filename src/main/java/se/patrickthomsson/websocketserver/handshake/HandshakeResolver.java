@@ -14,11 +14,10 @@ public class HandshakeResolver {
 	private ChallengeCalculator challengeCalculator;
 
 	public HandshakeResponse buildResponse(HandshakeRequest handshakeRequest) {
-		int version = getVersion(handshakeRequest);
-		if(version < 6) {
-			return createVersionZero(handshakeRequest);
+		if(getVersion(handshakeRequest) >= 6) {
+			return createVersionSixOrHigher(handshakeRequest);
 		}
-		return createVersionSixOrHigher(handshakeRequest);
+		return createVersionZero(handshakeRequest);
 	}
 
 	private HandshakeResponse createVersionSixOrHigher(HandshakeRequest handshakeRequest) {

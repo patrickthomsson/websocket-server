@@ -1,14 +1,15 @@
 package se.patrickthomsson.websocketserver.message;
 
+import se.patrickthomsson.websocketserver.connection.ConnectionId;
 import se.patrickthomsson.websocketserver.frame.Frame;
 import se.patrickthomsson.websocketserver.protocol.Request;
 
 public class FrameRequest implements Request {
 
 	private Frame frame;
-	private String connectionId;
+	private ConnectionId connectionId;
 	
-	public FrameRequest(Frame frame, String connectionId) {
+	public FrameRequest(Frame frame, ConnectionId connectionId) {
 		this.frame = frame;
 		this.connectionId = connectionId;
 	}
@@ -19,7 +20,7 @@ public class FrameRequest implements Request {
 	}
 
 	@Override
-	public String getConnectionId() {
+	public ConnectionId getConnectionId() {
 		return connectionId;
 	}
 

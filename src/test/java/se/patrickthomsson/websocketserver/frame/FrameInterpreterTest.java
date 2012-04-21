@@ -1,12 +1,9 @@
 package se.patrickthomsson.websocketserver.frame;
 
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 
-import se.patrickthomsson.websocketserver.frame.Frame;
-import se.patrickthomsson.websocketserver.frame.FrameInterpreter;
+import static org.junit.Assert.assertEquals;
 
 public class FrameInterpreterTest {
 

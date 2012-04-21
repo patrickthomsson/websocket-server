@@ -7,24 +7,21 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class IdentityGeneratorTest {
 
 	@Test
 	public void shouldGenerateId() {
 		IdentityGenerator identityGenerator = new IdentityGenerator();
-		String id = identityGenerator.generateId();
-		assertNotNull(id);
-		assertTrue(id.length() > 0);
+		assertNotNull(identityGenerator.generateId());
 	}
 	
 	@Test
 	public void shouldNotGenerateSameIdTwice() {
-		Set<String> oldIds = new HashSet<String>();
+		Set<ConnectionId> oldIds = new HashSet<ConnectionId>();
 		
 		for(int i=0; i<1000; i++) {
-			String id = new IdentityGenerator().generateId();
+			ConnectionId id = new IdentityGenerator().generateId();
 			assertFalse(oldIds.contains(id));
 			oldIds.add(id);
 		}

@@ -18,40 +18,31 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.patrickthomsson.websocketserver.connection.Connection;
 import se.patrickthomsson.websocketserver.connection.ConnectionManager;
+import se.patrickthomsson.websocketserver.exception.ConnectionClosedException;
+import se.patrickthomsson.websocketserver.exception.WebSocketServerException;
 import se.patrickthomsson.websocketserver.handshake.Handshaker;
 import se.patrickthomsson.websocketserver.protocol.CommunicationProtocol;
 import se.patrickthomsson.websocketserver.protocol.Request;
 import se.patrickthomsson.websocketserver.protocol.Response;
-import se.patrickthomsson.websocketserver.protocol.simplechat.SimpleChatProtocol;
 
 public class WebSocketServer {
-	
+
 	public static int port = 8082;
-	
+
 	private static final Logger LOG = Logger.getLogger(WebSocketServer.class);
-	
-	private static ApplicationContext context = new ClassPathXmlApplicationContext( "application-context.xml");
+
+	private static ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
 	private ConnectionManager connectionManager = context.getBean(ConnectionManager.class);
 	private Communicator communicator = context.getBean(Communicator.class);
 	private Handshaker handshaker = context.getBean(Handshaker.class);
 
 	private CommunicationProtocol protocol;
 
-	private WebSocketServer(CommunicationProtocol protocol) {
+	public WebSocketServer(CommunicationProtocol protocol) {
 		this.protocol = protocol;
 	}
 
-	public static void main(String[] args) throws IOException {
-		LOG.info("Starting WebSocketServer...");
-		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-port")) {
-				port = Integer.parseInt(args[++i]);
-			}
-		}
-		new WebSocketServer(new SimpleChatProtocol()).start();
-	}
-
-	private void start() throws IOException {
+	public void start() throws IOException {
 		Selector selector = Selector.open();
 		ServerSocket serverSocket = configureServerSocketChannel(selector);
 		LOG.info("Listening on port " + port);
@@ -77,17 +68,26 @@ public class WebSocketServer {
 		}
 	}
 
+	public void processResponse(Response response) {
+		Collection<Connection> receivers = connectionManager.getConnections(response.getReceiverIds());
+		try {
+			communicator.sendResponse(response, receivers);
+		} catch (IOException e) {
+			LOG.error("Failed to send response", e);
+			throw new WebSocketServerException("Failed to send response", e);
+		}
+	}
+
 	private ServerSocket configureServerSocketChannel(Selector selector) throws IOException, ClosedChannelException {
 		ServerSocketChannel channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
 		channel.register(selector, SelectionKey.OP_ACCEPT);
-		
+
 		ServerSocket serverSocket = channel.socket();
 		serverSocket.bind(new InetSocketAddress(port));
-		
 		return serverSocket;
 	}
-	
+
 	private void openConnection(ServerSocket serverSocket, Selector selector) throws IOException {
 		Socket socket = acceptConnection(serverSocket, selector);
 		Connection connection = connectionManager.addConnection(socket);
@@ -101,7 +101,8 @@ public class WebSocketServer {
 		return socket;
 	}
 
-	private void configureSocketChannel(SocketChannel socketChannel, Selector selector) throws IOException, ClosedChannelException {
+	private void configureSocketChannel(SocketChannel socketChannel, Selector selector) throws IOException,
+			ClosedChannelException {
 		socketChannel.configureBlocking(false);
 		socketChannel.register(selector, SelectionKey.OP_READ);
 	}
@@ -110,16 +111,30 @@ public class WebSocketServer {
 		SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
 		Connection connection = connectionManager.getConnection(socketChannel.socket());
 		LOG.debug("Communicating with connection: " + connection);
-		
+
 		if (connection.isAwaitingHandshake()) {
 			handshaker.initiateConnection(socketChannel);
 			connection.open();
 		} else if (connection.isOpen()) {
-			Request request = communicator.readRequest(connection);
-			Response response = protocol.respond(request);
-			Collection<Connection> receivers = connectionManager.getConnections(response.getReceiverIds());
-			communicator.sendResponse(response, receivers);
+			handleRequest(selectionKey, connection);
 		}
+	}
+
+	private void handleRequest(SelectionKey selectionKey, Connection connection) {
+		try {
+			Request request = communicator.readRequest(connection);
+			protocol.processRequest(request);
+		} catch (ConnectionClosedException e) {
+			LOG.info("Connection was closed. Removing connection with id: " + connection.getId());
+			selectionKey.cancel();
+			closeConnection(connection);
+		}
+	}
+
+	private void closeConnection(Connection connection) {
+		connectionManager.removeConnection(connection.getSocket());
+		protocol.removeConnection(connection.getId());
+		connection.close();
 	}
 
 }

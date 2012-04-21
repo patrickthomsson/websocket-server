@@ -11,7 +11,11 @@ public class IdentityGenerator {
 
 	private static final Set<UUID> generatedIds = new HashSet<UUID>();
 	
-	public String generateId() {
+	public ConnectionId generateId() {
+		return new ConnectionIdImpl(uniqueIdentifier());
+	}
+
+	private String uniqueIdentifier() {
 		UUID id = UUID.randomUUID();
 		
 		if(!generatedIds.contains(id)) {
@@ -19,7 +23,7 @@ public class IdentityGenerator {
 			return id.toString();
 		}
 		
-		return generateId();
+		return uniqueIdentifier();
 	}
 	
 }

@@ -1,8 +1,10 @@
 package se.patrickthomsson.websocketserver.protocol;
 
+import se.patrickthomsson.websocketserver.connection.ConnectionId;
+
 public interface Request {
 
-	public String getConnectionId();
+	public ConnectionId getConnectionId();
 	public String getMessage();
 
 }
