@@ -1,7 +1,7 @@
 
 (function($) {
 	
-	var url = "ws://localhost:8082/connectfour";
+	var url = "ws://" + window.location.hostname +":8082/connectfour";
 	var websocket;
 
 	//deals with form submission issues, we don't want the page to reload on submit
@@ -21,6 +21,12 @@
 		});
 		$("#invite").click(sendInvitation);
 		$("#user").focus();
+		
+		$('#inputMessage').keypress(function(e) {
+			if(e.which == 13){
+				$("#chatForm").submit();
+   			}
+		});
 	});
 	
 	var testSupport = function () {
@@ -40,15 +46,19 @@
 	
 		initWebSocket(url);
 		$("#user").attr("disabled", "disabled");
+		$("#connectButton").attr("disabled", "disabled");
 	}
 	
 	var disconnet = function() {
 		log("CLOSING CONNECTION");
 		websocket.close();
+		$("#connectButton").removeAttr("disabled");
+		$("#user").removeAttr("disabled");
 	}
 	
 	var initWebSocket = function(url) {
 		websocket = new WebSocket(url);
+		
 		websocket.onopen = function() {
 			log("CONNECTION OPEN");
 			$("#status").css("color", "green");
@@ -91,7 +101,9 @@
 			receiveChatMessage(message);
 		}
 		else if(msg.startsWith("USERLIST:")) {
+			log("got userlist message: " + msg);
 			updateUserlist(message.split("USERLIST:")[1].split(","));
+			log("updated userlist");
 		} 
 		else if(msg.startsWith("INVITATION:FROM:")) {
 			var gameAccepted = confirm("Do you want to play with " + msg.message.split(":")[2] + "?");

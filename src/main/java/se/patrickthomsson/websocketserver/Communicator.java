@@ -21,38 +21,44 @@ import se.patrickthomsson.websocketserver.protocol.Response;
 @Service
 public class Communicator {
 
-	private static final Logger LOG = Logger.getLogger(Communicator.class);
-	
-	@Autowired
-	private WebSocketIO webSocketIO;
-	@Autowired
-	private FrameBuilder frameBuilder;
-	@Autowired
-	private FrameInterpreter frameInterpreter;
+    private static final Logger LOG = Logger.getLogger(Communicator.class);
 
-	public Request readRequest(Connection connection) throws ConnectionClosedException {
-		SocketChannel socketChannel = connection.getSocket().getChannel();
-		byte[] requestBytes = webSocketIO.read(socketChannel);
+    @Autowired
+    private WebSocketIO webSocketIO;
+    @Autowired
+    private FrameBuilder frameBuilder;
+    @Autowired
+    private FrameInterpreter frameInterpreter;
 
-		if(requestBytes.length > 0) {
-			Frame frame = frameInterpreter.interpret(requestBytes);
-			if(frame.getType() == FrameType.CONNECTION_CLOSE) {
-				throw new ConnectionClosedException("Received CONNECTION_CLOSE frame.");
-			}
-			return new FrameRequest(frame, connection.getId());
-		}
-		throw new ConnectionClosedException("Empty input from connection, assuming connection closed.");
-	}
+    public Request readRequest(Connection connection)
+            throws ConnectionClosedException {
+        SocketChannel socketChannel = connection.getSocket().getChannel();
+        byte[] requestBytes = webSocketIO.read(socketChannel);
 
-	public void sendResponse(Response response, Collection<Connection> receivers) throws IOException {
-		if (!receivers.isEmpty()) {
-			Frame maskedFrame = frameBuilder.buildMaskedFrame(response.getMessage());
-			for (Connection receiver : receivers) {
-				SocketChannel socketChannel = receiver.getSocket().getChannel();
-				webSocketIO.write(maskedFrame.getRawFrame(), socketChannel);
-			}
-			LOG.debug(String.format("Outgoing frame: [%s] sent to [%s]", maskedFrame.toString(), receivers.toString()));
-		}
-	}
+        if (requestBytes.length > 0) {
+            Frame frame = frameInterpreter.interpret(requestBytes);
+            if (frame.getType() == FrameType.CONNECTION_CLOSE) {
+                throw new ConnectionClosedException(
+                        "Received CONNECTION_CLOSE frame.");
+            }
+            return new FrameRequest(frame, connection.getId());
+        }
+        throw new ConnectionClosedException(
+                "Empty input from connection, assuming connection closed.");
+    }
+
+    public void sendResponse(Response response, Collection<Connection> receivers)
+            throws IOException {
+        if (!receivers.isEmpty()) {
+            Frame maskedFrame = frameBuilder.buildUnmaskedFrame(response
+                    .getMessage());
+            for (Connection receiver : receivers) {
+                SocketChannel socketChannel = receiver.getSocket().getChannel();
+                webSocketIO.write(maskedFrame.getRawFrame(), socketChannel);
+            }
+            LOG.debug(String.format("Outgoing frame: [%s] sent to [%s]",
+                    maskedFrame.toString(), receivers.toString()));
+        }
+    }
 
 }

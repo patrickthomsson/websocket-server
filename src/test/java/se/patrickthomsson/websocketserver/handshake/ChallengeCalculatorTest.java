@@ -35,7 +35,7 @@ public class ChallengeCalculatorTest {
 	
 	@Test
 	public void shouldCalculateChecksum() {
-		assertEquals(CHECKSUM, calculator.calculate(KEY_1, KEY_2, RANDOM_BITS));
+		assertEquals(CHECKSUM, calculator.calculateVersion1Challenge(KEY_1, KEY_2, RANDOM_BITS));
 	}
 	
 	@Test

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
+import se.patrickthomsson.websocketserver.Server;
 import se.patrickthomsson.websocketserver.WebSocketServer;
 import se.patrickthomsson.websocketserver.connection.ConnectionId;
 import se.patrickthomsson.websocketserver.protocol.CommunicationProtocol;
@@ -20,7 +21,7 @@ public class ConnectFourProtocol implements CommunicationProtocol {
 	private PlayerManager playerManager = new PlayerManager();
 	private EventResolver eventResolver = new EventResolver(playerManager);
 	
-	private WebSocketServer webSocketServer;
+	private Server webSocketServer;
 	
 	public ConnectFourProtocol() {
 		webSocketServer = new WebSocketServer(this);

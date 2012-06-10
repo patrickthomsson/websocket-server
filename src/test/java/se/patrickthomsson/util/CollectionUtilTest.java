@@ -2,6 +2,7 @@ package se.patrickthomsson.util;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -12,22 +13,29 @@ public class CollectionUtilTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void shouldReturnEmptyStringIfCollectionIsEmpty() {
-		assertEquals("", CollectionUtil.asDelimitedString(Collections.EMPTY_LIST));
+		String string = CollectionUtil.asDelimitedString(Collections.EMPTY_LIST);
+        assertEquals("", string);
 	}
 	
 	@Test
 	public void shouldReturnElementAsStringWhenCollectionContainsOneElement() {
-		assertEquals("foo", CollectionUtil.asDelimitedString(Arrays.asList("foo")));
+		List<String> asList = Arrays.asList("foo");
+        String asDelimitedString = CollectionUtil.asDelimitedString(asList);
+        assertEquals("foo", asDelimitedString);
 	}
 	
 	@Test
 	public void shouldReturnElementsDelimitedWithCommaIfNoDelimiterSpecified() {
-		assertEquals("foo,bar", CollectionUtil.asDelimitedString(Arrays.asList("foo", "bar")));
+		List<String> asList = Arrays.asList("foo", "bar");
+        String asDelimitedString = CollectionUtil.asDelimitedString(asList);
+        assertEquals("foo,bar", asDelimitedString);
 	}
 	
 	@Test
 	public void shouldReturnElementsDelimitedWithSpecifiedDelimiterIfDelimiterSpecified() {
-		assertEquals("foo...bar", CollectionUtil.asDelimitedString(Arrays.asList("foo", "bar"), "..."));
+		List<String> asList = Arrays.asList("foo", "bar");
+        String asDelimitedString = CollectionUtil.asDelimitedString(asList, "...");
+        assertEquals("foo...bar", asDelimitedString);
 	}
 
 }

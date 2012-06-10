@@ -25,116 +25,149 @@ import se.patrickthomsson.websocketserver.protocol.CommunicationProtocol;
 import se.patrickthomsson.websocketserver.protocol.Request;
 import se.patrickthomsson.websocketserver.protocol.Response;
 
-public class WebSocketServer {
+public class WebSocketServer implements Server {
 
-	public static int port = 8082;
+    private static final Logger LOG = Logger.getLogger(WebSocketServer.class);
+    private static final ApplicationContext context = new ClassPathXmlApplicationContext(
+            "application-context.xml");
+    private static final int DEFAULT_PORT = 8082;
+    private static int port;
 
-	private static final Logger LOG = Logger.getLogger(WebSocketServer.class);
+    private ConnectionManager connectionManager = context
+            .getBean(ConnectionManager.class);
+    private Communicator communicator = context.getBean(Communicator.class);
+    private Handshaker handshaker = context.getBean(Handshaker.class);
 
-	private static ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
-	private ConnectionManager connectionManager = context.getBean(ConnectionManager.class);
-	private Communicator communicator = context.getBean(Communicator.class);
-	private Handshaker handshaker = context.getBean(Handshaker.class);
+    private CommunicationProtocol protocol;
 
-	private CommunicationProtocol protocol;
+    public WebSocketServer(CommunicationProtocol protocol) {
+        this(protocol, DEFAULT_PORT);
+    }
 
-	public WebSocketServer(CommunicationProtocol protocol) {
-		this.protocol = protocol;
-	}
+    public WebSocketServer(CommunicationProtocol protocol, int port) {
+        this.protocol = protocol;
+        WebSocketServer.port = port;
+    }
 
-	public void start() throws IOException {
-		Selector selector = Selector.open();
-		ServerSocket serverSocket = configureServerSocketChannel(selector);
-		LOG.info("Listening on port " + port);
+    public static int getPort() {
+        return port;
+    }
 
-		while (true) {
-			if (selector.select() == 0) {
-				continue;
-			}
-			Set<SelectionKey> keys = selector.selectedKeys();
+    /*
+     * (non-Javadoc)
+     * 
+     * @see se.patrickthomsson.websocketserver.Server#start()
+     */
+    @Override
+    public void start() throws IOException {
+        Selector selector = Selector.open();
+        ServerSocket serverSocket = configureServerSocketChannel(selector);
+        LOG.info("Listening on port " + port);
 
-			for (SelectionKey selectionKey : keys) {
-				switch (selectionKey.readyOps()) {
-				case SelectionKey.OP_ACCEPT:
-					openConnection(serverSocket, selector);
-					break;
-				case SelectionKey.OP_READ:
-					communicate(selectionKey);
-					break;
-				}
-			}
+        while (true) {
+            if (selector.select() == 0) {
+                continue;
+            }
+            Set<SelectionKey> keys = selector.selectedKeys();
 
-			keys.clear();
-		}
-	}
+            for (SelectionKey selectionKey : keys) {
+                switch (selectionKey.readyOps()) {
+                case SelectionKey.OP_ACCEPT:
+                    openConnection(serverSocket, selector);
+                    break;
+                case SelectionKey.OP_READ:
+                    communicate(selectionKey);
+                    break;
+                }
+            }
 
-	public void processResponse(Response response) {
-		Collection<Connection> receivers = connectionManager.getConnections(response.getReceiverIds());
-		try {
-			communicator.sendResponse(response, receivers);
-		} catch (IOException e) {
-			LOG.error("Failed to send response", e);
-			throw new WebSocketServerException("Failed to send response", e);
-		}
-	}
+            keys.clear();
+        }
+    }
 
-	private ServerSocket configureServerSocketChannel(Selector selector) throws IOException, ClosedChannelException {
-		ServerSocketChannel channel = ServerSocketChannel.open();
-		channel.configureBlocking(false);
-		channel.register(selector, SelectionKey.OP_ACCEPT);
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * se.patrickthomsson.websocketserver.Server#processResponse(se.patrickthomsson
+     * .websocketserver.protocol.Response)
+     */
+    @Override
+    public void processResponse(Response response) {
+        Collection<Connection> receivers = connectionManager
+                .getConnections(response.getReceiverIds());
+        try {
+            communicator.sendResponse(response, receivers);
+        } catch (IOException e) {
+            LOG.error("Failed to send response", e);
+            throw new WebSocketServerException("Failed to send response", e);
+        }
+    }
 
-		ServerSocket serverSocket = channel.socket();
-		serverSocket.bind(new InetSocketAddress(port));
-		return serverSocket;
-	}
+    private ServerSocket configureServerSocketChannel(Selector selector)
+            throws IOException, ClosedChannelException {
+        ServerSocketChannel channel = ServerSocketChannel.open();
+        channel.configureBlocking(false);
+        channel.register(selector, SelectionKey.OP_ACCEPT);
 
-	private void openConnection(ServerSocket serverSocket, Selector selector) throws IOException {
-		Socket socket = acceptConnection(serverSocket, selector);
-		Connection connection = connectionManager.addConnection(socket);
-		protocol.addConnection(connection.getId());
-	}
+        ServerSocket serverSocket = channel.socket();
+        serverSocket.bind(new InetSocketAddress(port));
+        return serverSocket;
+    }
 
-	private Socket acceptConnection(ServerSocket serverSocket, Selector selector) throws IOException {
-		Socket socket = serverSocket.accept();
-		LOG.info("Got connection from " + socket);
-		configureSocketChannel(socket.getChannel(), selector);
-		return socket;
-	}
+    private void openConnection(ServerSocket serverSocket, Selector selector)
+            throws IOException {
+        Socket socket = acceptConnection(serverSocket, selector);
+        Connection connection = connectionManager.addConnection(socket);
+        protocol.addConnection(connection.getId());
+    }
 
-	private void configureSocketChannel(SocketChannel socketChannel, Selector selector) throws IOException,
-			ClosedChannelException {
-		socketChannel.configureBlocking(false);
-		socketChannel.register(selector, SelectionKey.OP_READ);
-	}
+    private Socket acceptConnection(ServerSocket serverSocket, Selector selector)
+            throws IOException {
+        Socket socket = serverSocket.accept();
+        LOG.info("Got connection from " + socket);
+        configureSocketChannel(socket.getChannel(), selector);
+        return socket;
+    }
 
-	private void communicate(SelectionKey selectionKey) throws IOException {
-		SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-		Connection connection = connectionManager.getConnection(socketChannel.socket());
-		LOG.debug("Communicating with connection: " + connection);
+    private void configureSocketChannel(SocketChannel socketChannel,
+            Selector selector) throws IOException, ClosedChannelException {
+        socketChannel.configureBlocking(false);
+        socketChannel.register(selector, SelectionKey.OP_READ);
+    }
 
-		if (connection.isAwaitingHandshake()) {
-			handshaker.initiateConnection(socketChannel);
-			connection.open();
-		} else if (connection.isOpen()) {
-			handleRequest(selectionKey, connection);
-		}
-	}
+    private void communicate(SelectionKey selectionKey) throws IOException {
+        SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
+        Connection connection = connectionManager.getConnection(socketChannel
+                .socket());
+        LOG.debug("Communicating with connection: " + connection);
 
-	private void handleRequest(SelectionKey selectionKey, Connection connection) {
-		try {
-			Request request = communicator.readRequest(connection);
-			protocol.processRequest(request);
-		} catch (ConnectionClosedException e) {
-			LOG.info("Connection was closed. Removing connection with id: " + connection.getId());
-			selectionKey.cancel();
-			closeConnection(connection);
-		}
-	}
+        if (connection.isAwaitingHandshake()) {
+            handshaker.initiateConnection(socketChannel);
+            connection.open();
+        } else if (connection.isOpen()) {
+            handleRequest(selectionKey, connection);
+        } else {
+            throw new WebSocketServerException("Connection is closed");
+        }
+    }
 
-	private void closeConnection(Connection connection) {
-		connectionManager.removeConnection(connection.getSocket());
-		protocol.removeConnection(connection.getId());
-		connection.close();
-	}
+    private void handleRequest(SelectionKey selectionKey, Connection connection) {
+        try {
+            Request request = communicator.readRequest(connection);
+            protocol.processRequest(request);
+        } catch (ConnectionClosedException e) {
+            LOG.info("Connection was closed. Removing connection with id: "
+                    + connection.getId());
+            selectionKey.cancel();
+            closeConnection(connection);
+        }
+    }
+
+    private void closeConnection(Connection connection) {
+        connectionManager.removeConnection(connection.getSocket());
+        protocol.removeConnection(connection.getId());
+        connection.close();
+    }
 
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import se.patrickthomsson.util.CollectionUtil;
+import se.patrickthomsson.websocketserver.Server;
 import se.patrickthomsson.websocketserver.WebSocketServer;
 import se.patrickthomsson.websocketserver.connection.ConnectionId;
 import se.patrickthomsson.websocketserver.protocol.CommunicationProtocol;
@@ -22,7 +23,7 @@ public class SimpleChatProtocol implements CommunicationProtocol {
 	private static final String USERLIST_MESSAGE_PREFIX = "META:USERLIST:";
 	
 	private Map<ConnectionId, String> connections = new HashMap<ConnectionId, String>();
-	private WebSocketServer webSocketServer;
+	private Server webSocketServer;
 	
 	public SimpleChatProtocol() {
 		webSocketServer = new WebSocketServer(this);

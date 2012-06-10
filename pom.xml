@@ -12,8 +12,10 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>3.1.0.RELEASE</spring.version>
 	</properties>
+
 
 	<dependencies>
 
@@ -64,6 +66,28 @@
 		</dependency>
 		
 	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>2.9.1</version>
+			</plugin>
+		</plugins>
+	</build>
+	
+	<reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.9.1</version>
+      </plugin>
+    </plugins>
+  </reporting>
+	
+	
 
 <!-- 	<build> -->
 <!-- 		<plugins> -->

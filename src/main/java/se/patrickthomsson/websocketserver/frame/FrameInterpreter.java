@@ -32,17 +32,30 @@ public class FrameInterpreter {
 		byte[] payloadData = getPayloadData(frameBytes, payloadLen, byteIndex);
 		String unmaskedPayloadData = unmaskPayloadData(payloadData, maskingKey);
 
-		Frame frame = new Frame();
-		frame.setFinalFrame(frameFin);
-		frame.setRsv1(frameRsv1);
-		frame.setRsv2(frameRsv2);
-		frame.setRsv3(frameRsv3);
-		frame.setType(FrameType.fromOpCode(opCode));
-		frame.setMasked(masked);
-		frame.setPayloadLength(payloadLen);
-		frame.setMaskingKey(maskingKey);
-		frame.setUnmaskedData(unmaskedPayloadData);
-		frame.setRawFrame(frameBytes);
+		Frame frame = Frame.builder()
+				.finalFrame(frameFin)
+				.rsv1(frameRsv1)
+				.rsv2(frameRsv2)
+				.rsv3(frameRsv3)
+				.type(FrameType.fromOpCode(opCode))
+				.masked(masked)
+				.payloadLength(payloadLen)
+				.maskingKey(maskingKey)
+				.unmaskedData(unmaskedPayloadData)
+				.rawFrame(frameBytes)
+				.build();
+
+		// Frame frame = new Frame();
+		// frame.setFinalFrame(frameFin);
+		// frame.setRsv1(frameRsv1);
+		// frame.setRsv2(frameRsv2);
+		// frame.setRsv3(frameRsv3);
+		// frame.setType(FrameType.fromOpCode(opCode));
+		// frame.setMasked(masked);
+		// frame.setPayloadLength(payloadLen);
+		// frame.setMaskingKey(maskingKey);
+		// frame.setUnmaskedData(unmaskedPayloadData);
+		// frame.setRawFrame(frameBytes);
 
 		LOG.debug("Interpreted frame: " + frame);
 		LOG.debug(String.format("Interpreted data as: [%s]", unmaskedPayloadData));
