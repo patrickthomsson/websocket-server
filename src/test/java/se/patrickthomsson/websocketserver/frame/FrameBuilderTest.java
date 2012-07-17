@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import static org.mockito.MockitoAnnotations.initMocks;
 
-
 public class FrameBuilderTest {
 
 	@InjectMocks
@@ -28,16 +27,16 @@ public class FrameBuilderTest {
 	@Test
 	public void shouldBuildMaskedFrame() {
 		when(maskingKeyGenerator.generate()).thenReturn(new byte[] { 0x37, (byte) 0xfa, 0x2, 0x3d });
-		
 		Frame frame = frameBuilder.buildMaskedFrame("Hello");
-		
-		byte[] bytes = new byte[]{(byte) 0x81, (byte) 0x85, 0x37, (byte) 0xfa, 0x2, 0x3d, 0x7f, (byte) 0x9f, 0x6e, 0x51, 0x58};
-		
-		for(int i=0; i<bytes.length; i++) {
-			assertEquals("Byte not equal at index " + i + ".", bytes[i], frame.getRawFrame()[i]);
-		}
+		byte[] expectedBytes = new byte[] { (byte) 0x81, (byte) 0x85, 0x37, (byte) 0xfa, 0x2, 0x3d, 0x7f, (byte) 0x9f, 0x6e, 0x51, 0x58 };
+		assertEqualArrays(expectedBytes, frame.getRawFrame());
+	}
 
-		assertEquals(bytes.length, frame.getRawFrame().length);
+	private void assertEqualArrays(byte[] expected, byte[] actual) {
+		for(int i=0; i<expected.length; i++) {
+			assertEquals("Byte not equal at index " + i + ".", expected[i], actual[i]);
+		}
+		assertEquals(expected.length, actual.length);
 	}
 	
 }

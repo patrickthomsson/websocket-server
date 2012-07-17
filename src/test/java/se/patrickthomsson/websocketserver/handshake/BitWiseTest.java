@@ -53,23 +53,7 @@ public class BitWiseTest {
 	
 	@Test
 	public void testName() throws Exception {
-
-//		int dataItemByte = 240 ^ "M".getBytes()[0];
-//		String dataItem = new String(new byte[]{ (byte) dataItemByte });
-//		System.out.println(dataItemByte + "=" + dataItem);
-//		
-//		
-//		byte[] bytes = "A".getBytes("utf-8");
-//		System.out.println(bytes[0] + "=" + new String(bytes));
-//		System.out.println(new String(new byte[]{65}));
-//		
-//		for(int i=0; i<128; i++) {
-//			System.out.println(i + "=" + new String(new byte[] { (byte) i }));
-//		}
-		
-		
 		int i = 56 ^ 43;
 		System.out.println(i + "=" + (i ^ 43));
-		
-	}	
+	}
 }

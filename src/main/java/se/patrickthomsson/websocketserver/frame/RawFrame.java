@@ -2,13 +2,11 @@ package se.patrickthomsson.websocketserver.frame;
 
 import java.io.UnsupportedEncodingException;
 
-import se.patrickthomsson.util.BitPatternUtil;
+import se.patrickthomsson.util.BitManipulationUtil;
 import se.patrickthomsson.websocketserver.exception.WebSocketServerException;
 
 public class RawFrame {
 
-    private static final String ZERO = "0";
-    private static final String ONE = "1";
     private static final String CHAR_SET = "UTF-8";
 
     private final Frame frame;
@@ -65,14 +63,12 @@ public class RawFrame {
     private byte[] buildPayloadDataLengthBytes() {
         int payloadLength = getUnmaskedDataAsUtf8().length;
         byte payloadLengthByte = (byte) payloadLength;
-        if (payloadLength <= 125) {
-            if (frame.isMasked()) {
-                // set highest order bit to 1, to indicate that the frame is
-                // masked
-                payloadLengthByte |= (byte) 128;
-            }
-        } else {
-            throw new WebSocketServerException("Payload length was too long, not supported yet... length was " + payloadLength);
+        if (payloadLength > 125) {
+        	throw new WebSocketServerException("Payload length was too long, not supported yet... length was " + payloadLength);
+        }
+        if (frame.isMasked()) {
+            // set highest order bit to 1, to indicate that the frame is masked
+        	payloadLengthByte = BitManipulationUtil.setEighthBit(payloadLengthByte);
         }
         return new byte[] { payloadLengthByte };
     }
@@ -84,21 +80,24 @@ public class RawFrame {
             throw new WebSocketServerException("Could not convert to UTF-8: " + frame.getUnmaskedData(), e);
         }
     }
-
+    
     private byte buildFirstByte() {
-        StringBuilder firstByteBitPattern = new StringBuilder();
-        firstByteBitPattern.append(frame.isFinalFrame() ? ONE : ZERO);
-        firstByteBitPattern.append(frame.isRsv1() ? ONE : ZERO);
-        firstByteBitPattern.append(frame.isRsv2() ? ONE : ZERO);
-        firstByteBitPattern.append(frame.isRsv3() ? ONE : ZERO);
-        firstByteBitPattern.append(buildOpcodeBitPattern(frame.getType()));
-        byte firstByte = (byte) Integer.parseInt(firstByteBitPattern.toString(), 2);
-        return firstByte;
-    }
-
-    private String buildOpcodeBitPattern(final FrameType type) {
-        String bitPattern = BitPatternUtil.createBitPattern(type.getOpCode());
-        return bitPattern.substring(4);
-    }
+		byte firstByte = 0;
+		
+		if(frame.isFinalFrame()) {
+			firstByte = BitManipulationUtil.setEighthBit(firstByte);
+		}
+		if(frame.isRsv1()) {
+			firstByte = BitManipulationUtil.setSeventhBit(firstByte);
+		}
+		if(frame.isRsv2()) {
+			firstByte = BitManipulationUtil.setSixthBit(firstByte);
+		}
+		if(frame.isRsv3()) {
+			firstByte = BitManipulationUtil.setFifthBit(firstByte);
+		}
+		//set opCode bits (the last four bits)
+		return firstByte |= frame.getType().getOpCode();
+	}
 
 }

@@ -25,7 +25,7 @@ public class Encrypter {
             return MessageDigest.getInstance(algorithm).digest(unencrypted);
         } catch (NoSuchAlgorithmException e) {
             LOG.error("No such algorithm: " + algorithm, e);
-            throw new RuntimeException("No such algorithm" + algorithm, e);
+            throw new RuntimeException("No such algorithm " + algorithm, e);
         }
     }
 

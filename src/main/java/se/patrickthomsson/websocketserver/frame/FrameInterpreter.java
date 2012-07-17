@@ -3,7 +3,7 @@ package se.patrickthomsson.websocketserver.frame;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
-import se.patrickthomsson.util.BitPatternUtil;
+import se.patrickthomsson.util.BitManipulationUtil;
 import se.patrickthomsson.websocketserver.exception.WebSocketServerException;
 
 @Service
@@ -11,21 +11,16 @@ public class FrameInterpreter {
 
 	private static final Logger LOG = Logger.getLogger(FrameInterpreter.class);
 
-	private static final byte FLAG_BIT_1 = 1; // 2^^0 00000001
-	private static final byte FLAG_BIT_2 = 2; // 2^^1 00000010
-	private static final byte FLAG_BIT_3 = 4; // 2^^2 00000100
-	private static final byte FLAG_BIT_4 = 8; // 2^^3 00001000
-
 	public Frame interpret(byte[] frameBytes) {
 		ByteIndex byteIndex = new ByteIndex(2);
 
-		boolean frameFin = firstBitSet(frameBytes[0]);
-		boolean frameRsv1 = secondBitSet(frameBytes[0]);
-		boolean frameRsv2 = thirdBitSet(frameBytes[0]);
-		boolean frameRsv3 = fourthBitSet(frameBytes[0]);
+		boolean frameFin = BitManipulationUtil.isFirstBitSet(frameBytes[0]);
+		boolean frameRsv1 = BitManipulationUtil.isSecondBitSet(frameBytes[0]);
+		boolean frameRsv2 = BitManipulationUtil.isThirdBitSet(frameBytes[0]);
+		boolean frameRsv3 = BitManipulationUtil.isFourthBitSet(frameBytes[0]);
 
 		byte opCode = getOpCode(frameBytes[0]);
-		boolean masked = firstBitSet(frameBytes[1]);
+		boolean masked = BitManipulationUtil.isFirstBitSet(frameBytes[1]);
 
 		int payloadLen = getPayloadLength(frameBytes, byteIndex);
 		byte[] maskingKey = getMaskingKey(frameBytes, byteIndex);
@@ -44,18 +39,6 @@ public class FrameInterpreter {
 				.unmaskedData(unmaskedPayloadData)
 				.rawFrame(frameBytes)
 				.build();
-
-		// Frame frame = new Frame();
-		// frame.setFinalFrame(frameFin);
-		// frame.setRsv1(frameRsv1);
-		// frame.setRsv2(frameRsv2);
-		// frame.setRsv3(frameRsv3);
-		// frame.setType(FrameType.fromOpCode(opCode));
-		// frame.setMasked(masked);
-		// frame.setPayloadLength(payloadLen);
-		// frame.setMaskingKey(maskingKey);
-		// frame.setUnmaskedData(unmaskedPayloadData);
-		// frame.setRawFrame(frameBytes);
 
 		LOG.debug("Interpreted frame: " + frame);
 		LOG.debug(String.format("Interpreted data as: [%s]", unmaskedPayloadData));
@@ -89,8 +72,7 @@ public class FrameInterpreter {
 	}
 
 	private byte getOpCode(byte firstByte) {
-		byte mask = asByte("00001111");
-		return (byte) (firstByte & mask);
+		return BitManipulationUtil.unsetFourHighestOrderBits(firstByte);
 	}
 
 	/**
@@ -105,8 +87,7 @@ public class FrameInterpreter {
 	 * data.
 	 */
 	private int getPayloadLength(byte[] frame, ByteIndex byteIndex) {
-		byte mask = asByte("01111111");
-		byte payloadLength = (byte) (frame[1] & mask);
+		byte payloadLength = BitManipulationUtil.unsetEighthBit(frame[1]);
 
 		if (payloadLength <= 125 && payloadLength >= 0) {
 			return payloadLength;
@@ -120,10 +101,12 @@ public class FrameInterpreter {
 	}
 
 	private int getPayloadLengthFromEightBytes(byte[] frame, ByteIndex byteIndex) {
-		String bitPattern = BitPatternUtil.createBitPattern(frame[byteIndex.next()], frame[byteIndex.next()],
-				frame[byteIndex.next()], frame[byteIndex.next()], frame[byteIndex.next()], frame[byteIndex.next()],
-				frame[byteIndex.next()], frame[byteIndex.next()]);
-		long payloadLength = asLong(bitPattern);
+		byte[] bytes = new byte[8];
+		for(int i=0; i<bytes.length; i++) {
+			bytes[i] = frame[byteIndex.next()];
+		}
+		
+		long payloadLength = BitManipulationUtil.consecutiveBytesAsLong(bytes);
 
 		if (payloadLength > Integer.MAX_VALUE) {
 			LOG.error("Payload length is too long...");
@@ -133,36 +116,13 @@ public class FrameInterpreter {
 	}
 
 	private int getPayloadLengthFromTwoBytes(byte[] frame, ByteIndex byteIndex) {
-		String bitPattern = BitPatternUtil.createBitPattern(frame[byteIndex.next()], frame[byteIndex.next()]);
-		return asInt(bitPattern);
-	}
-
-	private byte asByte(String bitPattern) {
-		return Byte.parseByte(bitPattern, 2);
-	}
-	
-	private int asInt(String bitPattern) {
-		return Integer.parseInt(bitPattern, 2);
-	}
-
-	private long asLong(String bitPattern) {
-		return Long.parseLong(bitPattern, 2);
-	}
-	
-	private static boolean firstBitSet(byte b) {
-		return FLAG_BIT_1 == (b & FLAG_BIT_1);
-	}
-
-	private static boolean secondBitSet(byte b) {
-		return FLAG_BIT_2 == (b & FLAG_BIT_2);
-	}
-
-	private static boolean thirdBitSet(byte b) {
-		return FLAG_BIT_3 == (b & FLAG_BIT_3);
-	}
-
-	private static boolean fourthBitSet(byte b) {
-		return FLAG_BIT_4 == (b & FLAG_BIT_4);
+		byte[] bytes = new byte[2];
+		for(int i=0; i<bytes.length; i++) {
+			bytes[i] = frame[byteIndex.next()];
+		}
+		long payloadLength = BitManipulationUtil.consecutiveBytesAsLong(bytes);
+		
+		return (int) payloadLength;
 	}
 
 	private static class ByteIndex {
